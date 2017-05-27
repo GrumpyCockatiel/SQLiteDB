@@ -5,6 +5,8 @@
 //  Created by Fahim Farook on 12/6/14.
 //  Copyright (c) 2014 RookSoft Pte. Ltd. All rights reserved.
 //
+// Forked and Modified by Tag Guillory on 2017-May-27
+// Changes to work with iOS apps
 
 import Foundation
 
@@ -17,8 +19,10 @@ private let SQLITE_TRANSIENT = unsafeBitCast(-1, to:sqlite3_destructor_type.self
 /// Simple wrapper class to provide basic SQLite database access.
 @objc(SQLiteDB)
 class SQLiteDB:NSObject {
-	/// The SQLite database file name - defaults to `data.db`.
-	var DB_NAME = "data.db"
+	/// The SQLite database file name
+	var DB_NAME = "mydata"
+	/// the default sqlite db extension to use
+	var DB_EXTENSION = "db"
 	/// Singleton instance for access to the SQLiteDB class
 	static let shared = SQLiteDB()
 	/// Internal name for GCD queue used to execute SQL commands so that all commands are executed sequentially
@@ -60,10 +64,14 @@ class SQLiteDB:NSObject {
 		if db != nil {
 			closeDB()
 		}
+		
 		// Set up for file operations
-		let fm = FileManager.default
+		let fm = Foundation.FileManager.default
+		
 		// Get path to DB in Documents directory
-		var docDir = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)[0]
+		//var docDir = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)[0]
+		var docDir = Bundle.main.path(forResource: DB_NAME, ofType: DB_EXTENSION);
+		
 		// If macOS, add app name to path since otherwise, DB could possibly interfere with another app using SQLiteDB
 		#if os(OSX)
 			let info = Bundle.main.infoDictionary!
@@ -79,7 +87,10 @@ class SQLiteDB:NSObject {
 				}
 			}
 		#endif
-		let path = (docDir as NSString).appendingPathComponent(DB_NAME)
+		
+		//let path = (docDir as NSString).appendingPathComponent(DB_NAME)
+		let path = docDir!;
+		
 		// Check if DB is there in Documents directory
 		if !(fm.fileExists(atPath:path)) && copyFile {
 			// The database does not exist, so copy it
